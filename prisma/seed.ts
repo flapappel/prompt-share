@@ -87,6 +87,7 @@ async function main() {
     data: {
       name: 'Test Contact',
       email: 'contact@example.com',
+      subject: 'Vraag over prompts',
       message: 'Ik heb een vraag over het gebruik van prompts in de klas.',
       isRead: false,
     },
