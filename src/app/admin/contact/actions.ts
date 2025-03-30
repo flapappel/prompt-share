@@ -3,12 +3,16 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-export async function deleteContact(formData: FormData) {
+type DeleteContactState = {
+  error?: string;
+};
+
+export async function deleteContact(prevState: DeleteContactState | null, formData: FormData): Promise<DeleteContactState | null> {
   try {
     const id = formData.get("id");
-    
+
     if (!id) {
-      return { error: "ID ontbreekt" };
+      return { error: "ID is verplicht" };
     }
 
     await prisma.contact.delete({
@@ -18,9 +22,9 @@ export async function deleteContact(formData: FormData) {
     });
 
     revalidatePath("/admin/contact");
-    return { success: true };
+    return null;
   } catch (error) {
-    console.error("Fout bij het verwijderen van contact bericht:", error);
+    console.error("Error deleting contact:", error);
     return { error: "Er is een fout opgetreden bij het verwijderen van het bericht" };
   }
 } 

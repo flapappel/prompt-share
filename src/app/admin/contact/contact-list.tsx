@@ -1,29 +1,3 @@
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { AdminContactList } from "./contact-list";
-
-async function getContacts() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/login");
-  }
-
-  return await prisma.contact.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-}
-
-export default async function AdminContactPage() {
-  const contacts = await getContacts();
-  
-  return <AdminContactList contacts={contacts} />;
-}
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -31,9 +5,18 @@ import { deleteContact } from "./actions";
 import { useFormState } from "react-dom";
 import { useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { Contact } from "@prisma/client";
 
-function AdminContactList({ contacts }: { contacts: any[] }) {
-  const [state, formAction] = useFormState(deleteContact, null);
+type ContactListProps = {
+  contacts: Contact[];
+};
+
+type DeleteContactState = {
+  error?: string;
+};
+
+export function AdminContactList({ contacts }: ContactListProps) {
+  const [state, formAction] = useFormState<DeleteContactState | null, FormData>(deleteContact, null);
 
   useEffect(() => {
     if (state?.error) {
