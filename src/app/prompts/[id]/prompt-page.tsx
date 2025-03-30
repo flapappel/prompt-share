@@ -1,9 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Copy, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { likePrompt } from "./actions";
+import { toggleLike } from "./actions";
 
 interface PromptPageProps {
   prompt: {
@@ -11,75 +12,97 @@ interface PromptPageProps {
     title: string;
     content: string;
     grade: string;
-    authorName: string;
     category: {
       name: string;
     };
-    likes: {
-      id: string;
-    }[];
+    authorName: string;
+    likes: { id: string }[];
   };
 }
 
-export default function PromptPage({ prompt }: PromptPageProps) {
+export function PromptPage({ prompt }: PromptPageProps) {
   const { toast } = useToast();
+  const isLiked = prompt.likes.length > 0;
 
-  async function handleLike() {
+  const handleCopy = async () => {
     try {
-      const result = await likePrompt(prompt.id);
-      if (!result.success) {
+      await navigator.clipboard.writeText(prompt.content);
+      toast({
+        title: "Gekopieerd!",
+        description: "De prompt is gekopieerd naar je klembord.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Fout",
+        description: "Er is een fout opgetreden bij het kopiëren van de prompt.",
+      });
+    }
+  };
+
+  const handleLike = async () => {
+    try {
+      const result = await toggleLike(prompt.id);
+      if (result.success) {
         toast({
-          title: "Fout",
-          description: result.error || "Er is een fout opgetreden bij het liken van de prompt",
+          title: isLiked ? "Unlike" : "Geliked",
+          description: isLiked 
+            ? "Je hebt de prompt unliked." 
+            : "Je hebt de prompt geliked.",
+        });
+      } else {
+        toast({
           variant: "destructive",
+          title: "Fout",
+          description: result.error || "Er is een fout opgetreden bij het liken van de prompt.",
         });
       }
     } catch (error) {
       toast({
-        title: "Fout",
-        description: "Er is een fout opgetreden bij het liken van de prompt",
         variant: "destructive",
+        title: "Fout",
+        description: "Er is een fout opgetreden bij het liken van de prompt.",
       });
     }
-  }
-
-  function handleCopy() {
-    navigator.clipboard.writeText(prompt.content);
-    toast({
-      title: "Gekopieerd",
-      description: "De prompt is gekopieerd naar je klembord",
-    });
-  }
+  };
 
   return (
-    <main className="container mx-auto py-10">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-3xl font-bold mb-4">{prompt.title}</h1>
-          <div className="flex gap-2 text-sm text-gray-600 mb-6">
-            <span>Leerjaar: {prompt.grade}</span>
-            <span>•</span>
-            <span>Categorie: {prompt.category.name}</span>
-            <span>•</span>
-            <span>Auteur: {prompt.authorName}</span>
+    <div className="container mx-auto px-4 py-8">
+      <Card className="p-6">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{prompt.title}</h1>
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span>Groep: {prompt.grade}</span>
+              <span>•</span>
+              <span>Categorie: {prompt.category.name}</span>
+              <span>•</span>
+              <span>Auteur: {prompt.authorName}</span>
+            </div>
           </div>
-
-          <div className="prose max-w-none mb-8">
-            <p className="whitespace-pre-wrap">{prompt.content}</p>
-          </div>
-
-          <div className="flex gap-4">
-            <Button onClick={handleCopy} variant="outline">
-              <Copy className="w-4 h-4 mr-2" />
-              Kopieer prompt
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleCopy}
+              className="h-10 w-10"
+            >
+              <Copy className="h-4 w-4" />
             </Button>
-            <Button onClick={handleLike} variant="outline">
-              <Heart className="w-4 h-4 mr-2" />
-              {prompt.likes.length} {prompt.likes.length === 1 ? "Like" : "Likes"}
+            <Button
+              variant={isLiked ? "default" : "outline"}
+              size="icon"
+              onClick={handleLike}
+              className="h-10 w-10"
+            >
+              <Heart className="h-4 w-4" />
             </Button>
           </div>
         </div>
-      </div>
-    </main>
+        <div className="prose max-w-none">
+          <p className="whitespace-pre-wrap">{prompt.content}</p>
+        </div>
+      </Card>
+    </div>
   );
 } 
