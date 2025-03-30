@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -12,59 +12,73 @@ async function main() {
   await prisma.contact.deleteMany();
 
   // Maak een admin gebruiker
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const admin = await prisma.user.create({
-    data: {
-      email: 'admin@promptshare.nl',
+  const hashedPassword = await bcrypt.hash('admin123', 10);
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@example.com' },
+    update: {},
+    create: {
+      email: 'admin@example.com',
       name: 'Admin',
-      password: adminPassword,
+      password: hashedPassword,
       role: 'ADMIN',
     },
   });
 
   // Maak categorieën
   const categories = await Promise.all([
-    prisma.category.create({
-      data: { name: 'Taal' },
+    prisma.category.upsert({
+      where: { name: 'Taal' },
+      update: {},
+      create: { name: 'Taal' },
     }),
-    prisma.category.create({
-      data: { name: 'Rekenen' },
+    prisma.category.upsert({
+      where: { name: 'Rekenen' },
+      update: {},
+      create: { name: 'Rekenen' },
     }),
-    prisma.category.create({
-      data: { name: 'Wereldoriëntatie' },
-    }),
-    prisma.category.create({
-      data: { name: 'Kunst en Cultuur' },
-    }),
-    prisma.category.create({
-      data: { name: 'Sociaal-emotioneel' },
+    prisma.category.upsert({
+      where: { name: 'Geschiedenis' },
+      update: {},
+      create: { name: 'Geschiedenis' },
     }),
   ]);
 
-  // Maak voorbeeldprompts
-  const schrijfPrompt = await prisma.prompt.create({
-    data: {
-      title: 'Creatief schrijven verhaal',
-      content: 'Kun je een kort verhaal schrijven over een dappere ridder die een draak moet verslaan? Het verhaal moet geschikt zijn voor kinderen uit groep 5 en moet een duidelijke moraal bevatten.',
-      grade: 'GROEP_5',
-      authorId: admin.id,
-      authorName: admin.name || 'Admin',
-      categoryId: categories[0].id, // Taal categorie
-      isApproved: true,
-    },
-  });
-
-  const rekenPrompt = await prisma.prompt.create({
-    data: {
-      title: 'Tafels oefenen spelletje',
-      content: 'Bedenk een leuk en interactief spel om de tafels van vermenigvuldiging te oefenen met kinderen uit groep 4. Het spel moet zowel educatief als vermakelijk zijn.',
-      grade: 'GROEP_4',
-      authorId: admin.id,
-      authorName: admin.name || 'Admin',
-      categoryId: categories[1].id, // Rekenen categorie
-      isApproved: true,
-    },
-  });
+  // Maak voorbeeld prompts
+  await Promise.all([
+    prisma.prompt.upsert({
+      where: { title: 'Creatief schrijven verhaal' },
+      update: {},
+      create: {
+        title: 'Creatief schrijven verhaal',
+        content: 'Kun je een kort verhaal schrijven over een dappere ridder die een draak moet verslaan? Het verhaal moet geschikt zijn voor kinderen uit groep 5 en moet een duidelijke moraal bevatten.',
+        grade: 'HAVO',
+        authorId: admin.id,
+        categoryId: categories[0].id, // Taal categorie
+      },
+    }),
+    prisma.prompt.upsert({
+      where: { title: 'Wiskunde probleem' },
+      update: {},
+      create: {
+        title: 'Wiskunde probleem',
+        content: 'Los het volgende wiskunde probleem op: Een rechthoek heeft een omtrek van 24 cm en een oppervlakte van 35 cm². Wat zijn de afmetingen van de rechthoek?',
+        grade: 'VWO',
+        authorId: admin.id,
+        categoryId: categories[1].id, // Rekenen categorie
+      },
+    }),
+    prisma.prompt.upsert({
+      where: { title: 'Geschiedenis essay' },
+      update: {},
+      create: {
+        title: 'Geschiedenis essay',
+        content: 'Schrijf een essay over de invloed van de industriële revolutie op de samenleving. Focus op de sociale en economische veranderingen.',
+        grade: 'VWO',
+        authorId: admin.id,
+        categoryId: categories[2].id, // Geschiedenis categorie
+      },
+    }),
+  ]);
 
   // Voeg likes toe
   await Promise.all([
