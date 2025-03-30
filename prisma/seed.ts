@@ -1,115 +1,89 @@
-import { PrismaClient, Role, Grade } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Maak eerst de database leeg
-  await prisma.user.deleteMany();
-  await prisma.prompt.deleteMany();
-  await prisma.category.deleteMany();
+  // Verwijder bestaande data
   await prisma.like.deleteMany();
-  await prisma.contactMessage.deleteMany();
+  await prisma.prompt.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.contact.deleteMany();
 
   // Maak een admin gebruiker
   const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.create({
     data: {
-      email: 'admin@example.com',
-      name: 'Admin User',
+      email: 'admin@promptshare.nl',
+      name: 'Admin',
       password: adminPassword,
-      role: Role.ADMIN,
-    },
-  });
-
-  // Maak een normale gebruiker
-  const userPassword = await bcrypt.hash('user123', 10);
-  const user = await prisma.user.create({
-    data: {
-      email: 'user@example.com',
-      name: 'Test User',
-      password: userPassword,
-      role: Role.USER,
+      role: 'ADMIN',
     },
   });
 
   // Maak categorieën
   const categories = await Promise.all([
     prisma.category.create({
-      data: {
-        name: 'Taal',
-        description: 'Prompts voor taalonderwijs',
-      },
+      data: { name: 'Taal' },
     }),
     prisma.category.create({
-      data: {
-        name: 'Rekenen',
-        description: 'Prompts voor rekenonderwijs',
-      },
+      data: { name: 'Rekenen' },
     }),
     prisma.category.create({
-      data: {
-        name: 'Wereldoriëntatie',
-        description: 'Prompts voor wereldoriëntatie',
-      },
+      data: { name: 'Wereldoriëntatie' },
+    }),
+    prisma.category.create({
+      data: { name: 'Kunst en Cultuur' },
+    }),
+    prisma.category.create({
+      data: { name: 'Sociaal-emotioneel' },
     }),
   ]);
 
-  // Maak voorbeeld prompts
-  const prompts = await Promise.all([
-    prisma.prompt.create({
-      data: {
-        title: 'Wiskunde: Breuken optellen',
-        content: 'Maak een les over het optellen van breuken voor groep 6. Gebruik visuele voorbeelden en praktische oefeningen.',
-        grade: Grade.GRADE_5_6,
-        isApproved: true,
-        authorName: 'Test User',
-        authorId: user.id,
-        categoryId: categories[1].id,
-      },
-    }),
-    prisma.prompt.create({
-      data: {
-        title: 'Taal: Werkwoordspelling',
-        content: 'Ontwikkel een les over werkwoordspelling voor groep 4. Focus op de basisregels en veel voorkomende fouten.',
-        grade: Grade.GRADE_3_4,
-        isApproved: true,
-        authorName: 'Test User',
-        authorId: user.id,
-        categoryId: categories[0].id,
-      },
-    }),
-    prisma.prompt.create({
-      data: {
-        title: 'Geschiedenis: Romeinen',
-        content: 'Maak een les over het Romeinse Rijk voor groep 7. Behandel de belangrijkste gebeurtenissen en het dagelijks leven.',
-        grade: Grade.GRADE_7_8,
-        isApproved: false,
-        authorName: 'Test User',
-        authorId: user.id,
-        categoryId: categories[2].id,
-      },
-    }),
-  ]);
+  // Maak voorbeeldprompts
+  const schrijfPrompt = await prisma.prompt.create({
+    data: {
+      title: 'Creatief schrijven verhaal',
+      content: 'Kun je een kort verhaal schrijven over een dappere ridder die een draak moet verslaan? Het verhaal moet geschikt zijn voor kinderen uit groep 5 en moet een duidelijke moraal bevatten.',
+      grade: 'GROEP_5',
+      authorId: admin.id,
+      authorName: admin.name || 'Admin',
+      categoryId: categories[0].id, // Taal categorie
+      isApproved: true,
+    },
+  });
+
+  const rekenPrompt = await prisma.prompt.create({
+    data: {
+      title: 'Tafels oefenen spelletje',
+      content: 'Bedenk een leuk en interactief spel om de tafels van vermenigvuldiging te oefenen met kinderen uit groep 4. Het spel moet zowel educatief als vermakelijk zijn.',
+      grade: 'GROEP_4',
+      authorId: admin.id,
+      authorName: admin.name || 'Admin',
+      categoryId: categories[1].id, // Rekenen categorie
+      isApproved: true,
+    },
+  });
 
   // Voeg likes toe
   await Promise.all([
     prisma.like.create({
       data: {
-        userId: user.id,
-        promptId: prompts[0].id,
+        userId: admin.id,
+        promptId: schrijfPrompt.id,
       },
     }),
     prisma.like.create({
       data: {
-        userId: user.id,
-        promptId: prompts[1].id,
+        userId: admin.id,
+        promptId: rekenPrompt.id,
       },
     }),
   ]);
 
   // Maak voorbeeld contact bericht
-  await prisma.contactMessage.create({
+  await prisma.contact.create({
     data: {
       name: 'Test Contact',
       email: 'contact@example.com',
