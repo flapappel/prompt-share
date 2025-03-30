@@ -1,103 +1,110 @@
+import { prisma } from "@/lib/prisma";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+export default async function Home() {
+  const [newestPrompts, popularPrompts] = await Promise.all([
+    prisma.prompt.findMany({
+      where: { isApproved: true },
+      include: {
+        category: true,
+        likes: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    }),
+    prisma.prompt.findMany({
+      where: { isApproved: true },
+      include: {
+        category: true,
+        likes: true,
+      },
+      orderBy: {
+        likes: {
+          _count: "desc",
+        },
+      },
+      take: 6,
+    }),
+  ]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  return (
+    <main className="container mx-auto py-10">
+      <div className="max-w-3xl mx-auto mb-12">
+        <div className="flex items-center gap-4 mb-6">
+          <Image
+            src="/promptshare-logo.png"
+            alt="PromptShare Logo"
+            width={80}
+            height={80}
+            priority
+          />
+          <div>
+            <h1 className="text-4xl font-bold mb-2 text-[#1E3A8A]">Welkom bij Prompt Share</h1>
+            <p className="text-lg text-gray-600">
+              Ontdek en deel handige prompts voor het basisonderwijs. Hier vind je een verzameling van goedgekeurde prompts die je direct kunt gebruiken in je les.
+            </p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        <div className="flex gap-4 justify-center">
+          <Link href="/prompts/new">
+            <Button className="bg-[#1E3A8A] hover:bg-[#1E3A8A]/90">Deel je eigen prompt</Button>
+          </Link>
+          <Link href="/help">
+            <Button variant="outline" className="border-[#1E3A8A] text-[#1E3A8A] hover:bg-[#1E3A8A]/10">Leer hoe je een goede prompt maakt</Button>
+          </Link>
+          <Link href="/help/ai-tools">
+            <Button variant="outline" className="border-[#1E3A8A] text-[#1E3A8A] hover:bg-[#1E3A8A]/10">Hoe gebruik je prompts in AI-tools?</Button>
+          </Link>
+        </div>
+      </div>
+
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-6 text-[#1E3A8A]">Nieuwste Prompts</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {newestPrompts.map((prompt) => (
+            <Link
+              key={prompt.id}
+              href={`/prompts/${prompt.id}`}
+              className="block p-6 bg-[#EBF8FF] border-2 border-[#1E3A8A] rounded-lg shadow hover:shadow-md transition-shadow"
+            >
+              <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
+              <div className="flex gap-2 text-sm text-gray-600 mb-4">
+                <span>Leerjaar: {prompt.grade}</span>
+                <span>•</span>
+                <span>Categorie: {prompt.category.name}</span>
+                <span>•</span>
+                <span className="text-[#7C3AED]">{prompt.likes.length} likes</span>
+              </div>
+              <p className="text-gray-700 line-clamp-3">{prompt.content}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-6 text-[#1E3A8A]">Populaire Prompts</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {popularPrompts.map((prompt) => (
+            <Link
+              key={prompt.id}
+              href={`/prompts/${prompt.id}`}
+              className="block p-6 bg-[#EBF8FF] border-2 border-[#1E3A8A] rounded-lg shadow hover:shadow-md transition-shadow"
+            >
+              <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
+              <div className="flex gap-2 text-sm text-gray-600 mb-4">
+                <span>Leerjaar: {prompt.grade}</span>
+                <span>•</span>
+                <span>Categorie: {prompt.category.name}</span>
+                <span>•</span>
+                <span className="text-[#7C3AED]">{prompt.likes.length} likes</span>
+              </div>
+              <p className="text-gray-700 line-clamp-3">{prompt.content}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </main>
   );
-}
+} 

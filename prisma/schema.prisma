@@ -7,41 +7,74 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model Prompt {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  title       String
-  content     String
-  grade      Int
-  authorId    Int
-  author      User     @relation(fields: [authorId], references: [id])
-  likes       Like[]
-  isApproved  Boolean  @default(false)
+  url      = "postgresql://postgres:Sate1615!@localhost:5432/promptshare?schema=public"
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   email     String   @unique
   name      String?
   password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   prompts   Prompt[]
   likes     Like[]
-  role      Role     @default(USER)
+}
+
+model Prompt {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  grade       Grade
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  authorName  String
+  isApproved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  author      User?    @relation(fields: [authorId], references: [id])
+  authorId    String?
+  likes       Like[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  prompts   Prompt[]
 }
 
 model Like {
-  id        Int      @id @default(autoincrement())
-  promptId  Int
-  userId    Int
+  id        String   @id @default(cuid())
+  promptId  String
   prompt    Prompt   @relation(fields: [promptId], references: [id])
+  userId    String
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 
   @@unique([promptId, userId])
+}
+
+model Contact {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+enum Grade {
+  GROEP_1
+  GROEP_2
+  GROEP_3
+  GROEP_4
+  GROEP_5
+  GROEP_6
+  GROEP_7
+  GROEP_8
 }
 
 enum Role {
