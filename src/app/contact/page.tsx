@@ -1,109 +1,99 @@
 "use client";
 
-import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { submitContact } from "./actions";
+import { submitContactMessage } from "./actions";
+import { useFormStatus } from "react-dom";
+import { useFormState } from "react-dom";
+
+const initialState = {
+  message: "",
+  type: "",
+};
 
 export default function ContactPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
-  const formRef = useRef<HTMLFormElement>(null);
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setMessage("");
-
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      name: formData.get("name") as string,
-      email: formData.get("email") as string,
-      subject: formData.get("subject") as string,
-      message: formData.get("message") as string,
-    };
-
-    try {
-      const result = await submitContact(data);
-
-      if (result.error) {
-        setMessage(result.error);
-      } else {
-        setMessage("Bedankt voor je bericht! We nemen zo spoedig mogelijk contact met je op.");
-        if (formRef.current) {
-          formRef.current.reset();
-        }
-      }
-    } catch (error) {
-      console.error("Fout bij het versturen van het bericht:", error);
-      setMessage("Er is iets misgegaan. Probeer het later opnieuw.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+  const [state, formAction] = useFormState(submitContactMessage, initialState);
+  const { pending } = useFormStatus();
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Contact</h1>
-      <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl space-y-6">
-        <div className="space-y-2">
-          <label htmlFor="name" className="text-sm font-medium">
-            Naam
-          </label>
-          <Input
-            id="name"
-            name="name"
-            required
-            placeholder="Je naam"
-          />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">
-            E-mail
-          </label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            required
-            placeholder="je@email.nl"
-          />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="subject" className="text-sm font-medium">
-            Onderwerp
-          </label>
-          <Input
-            id="subject"
-            name="subject"
-            required
-            placeholder="Onderwerp van je bericht"
-          />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="message" className="text-sm font-medium">
-            Bericht
-          </label>
-          <Textarea
-            id="message"
-            name="message"
-            required
-            placeholder="Je bericht"
-            className="min-h-[150px]"
-          />
-        </div>
-        {message && (
-          <div className={`p-4 rounded-lg ${
-            message.includes("Bedankt") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-          }`}>
-            {message}
+    <div className="container mx-auto py-10">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 text-[#1E3A8A]">Contact</h1>
+        <p className="text-gray-600 mb-8">
+          Heb je een vraag of opmerking? Vul het onderstaande formulier in en we nemen zo snel mogelijk contact met je op.
+        </p>
+
+        <form action={formAction} className="space-y-6">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Naam
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+            />
           </div>
-        )}
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Verzenden..." : "Verstuur"}
-        </Button>
-      </form>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              E-mailadres
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+              Onderwerp
+            </label>
+            <input
+              type="text"
+              id="subject"
+              name="subject"
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+              Bericht
+            </label>
+            <textarea
+              id="message"
+              name="message"
+              required
+              rows={6}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+            ></textarea>
+          </div>
+
+          {state?.message && (
+            <div
+              className={`p-4 rounded-md ${
+                state.type === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+              }`}
+            >
+              {state.message}
+            </div>
+          )}
+
+          <Button 
+            type="submit" 
+            className="w-full bg-[#1E3A8A] hover:bg-[#1E3A8A]/90"
+            disabled={pending}
+          >
+            {pending ? "Bericht versturen..." : "Verstuur bericht"}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 } 

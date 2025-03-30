@@ -3,30 +3,39 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-export async function submitContact(data: {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-}) {
-  try {
-    if (!data.name || !data.email || !data.subject || !data.message) {
-      return { error: "Alle velden zijn verplicht" };
-    }
+export async function submitContactMessage(prevState: any, formData: FormData) {
+  const name = formData.get("name") as string;
+  const email = formData.get("email") as string;
+  const subject = formData.get("subject") as string;
+  const message = formData.get("message") as string;
 
+  if (!name || !email || !subject || !message) {
+    return {
+      message: "Alle velden zijn verplicht",
+      type: "error"
+    };
+  }
+
+  try {
     const contact = await prisma.contact.create({
       data: {
-        name: data.name,
-        email: data.email,
-        subject: data.subject,
-        message: data.message,
+        name,
+        email,
+        subject,
+        message,
       },
     });
 
     revalidatePath("/contact");
-    return { success: true, contact };
+    return {
+      message: "Bedankt voor je bericht! We nemen zo spoedig mogelijk contact met je op.",
+      type: "success"
+    };
   } catch (error) {
-    console.error("Fout bij het opslaan van contact bericht:", error);
-    return { error: "Er is een fout opgetreden bij het opslaan van je bericht" };
+    console.error("Error saving contact message:", error);
+    return {
+      message: "Er is iets misgegaan bij het versturen van je bericht",
+      type: "error"
+    };
   }
 } 
