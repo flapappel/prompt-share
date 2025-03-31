@@ -6,7 +6,6 @@ import Image from "next/image";
 export default async function Home() {
   const [newestPrompts, popularPrompts] = await Promise.all([
     prisma.prompt.findMany({
-      where: { isApproved: true },
       include: {
         category: true,
         likes: true,
@@ -15,7 +14,6 @@ export default async function Home() {
       take: 6,
     }),
     prisma.prompt.findMany({
-      where: { isApproved: true },
       include: {
         category: true,
         likes: true,
