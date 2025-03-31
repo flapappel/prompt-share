@@ -44,11 +44,9 @@ async function main() {
   ]);
 
   // Maak voorbeeld prompts
-  await Promise.all([
-    prisma.prompt.upsert({
-      where: { title: 'Creatief schrijven verhaal' },
-      update: {},
-      create: {
+  const prompts = await Promise.all([
+    prisma.prompt.create({
+      data: {
         title: 'Creatief schrijven verhaal',
         content: 'Kun je een kort verhaal schrijven over een dappere ridder die een draak moet verslaan? Het verhaal moet geschikt zijn voor kinderen uit groep 5 en moet een duidelijke moraal bevatten.',
         grade: 'HAVO',
@@ -56,10 +54,8 @@ async function main() {
         categoryId: categories[0].id, // Taal categorie
       },
     }),
-    prisma.prompt.upsert({
-      where: { title: 'Wiskunde probleem' },
-      update: {},
-      create: {
+    prisma.prompt.create({
+      data: {
         title: 'Wiskunde probleem',
         content: 'Los het volgende wiskunde probleem op: Een rechthoek heeft een omtrek van 24 cm en een oppervlakte van 35 cm². Wat zijn de afmetingen van de rechthoek?',
         grade: 'VWO',
@@ -67,10 +63,8 @@ async function main() {
         categoryId: categories[1].id, // Rekenen categorie
       },
     }),
-    prisma.prompt.upsert({
-      where: { title: 'Geschiedenis essay' },
-      update: {},
-      create: {
+    prisma.prompt.create({
+      data: {
         title: 'Geschiedenis essay',
         content: 'Schrijf een essay over de invloed van de industriële revolutie op de samenleving. Focus op de sociale en economische veranderingen.',
         grade: 'VWO',
@@ -85,13 +79,13 @@ async function main() {
     prisma.like.create({
       data: {
         userId: admin.id,
-        promptId: schrijfPrompt.id,
+        promptId: prompts[0].id,
       },
     }),
     prisma.like.create({
       data: {
         userId: admin.id,
-        promptId: rekenPrompt.id,
+        promptId: prompts[1].id,
       },
     }),
   ]);
