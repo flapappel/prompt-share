@@ -28,13 +28,22 @@ export async function submitPrompt(formData: FormData) {
       "8": Grade.GROEP_8,
     };
 
+    // Zoek de auteur op basis van de naam
+    const author = await prisma.user.findFirst({
+      where: { name: authorName }
+    });
+
+    if (!author) {
+      throw new Error("Auteur niet gevonden");
+    }
+
     const prompt = await prisma.prompt.create({
       data: {
         title,
         content,
         grade: gradeMap[grade] || Grade.GROEP_1,
         categoryId,
-        authorName,
+        authorId: author.id,
         isApproved: false,
       },
     });
