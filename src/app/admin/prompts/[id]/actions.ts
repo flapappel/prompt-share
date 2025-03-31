@@ -46,8 +46,14 @@ export async function updatePrompt(formData: FormData) {
 
     // Map de grade waarde naar de juiste enum waarde
     const gradeMap: Record<string, Grade> = {
-      "HAVO": Grade.HAVO,
-      "VWO": Grade.VWO,
+      "1": Grade.GROEP_1,
+      "2": Grade.GROEP_2,
+      "3": Grade.GROEP_3,
+      "4": Grade.GROEP_4,
+      "5": Grade.GROEP_5,
+      "6": Grade.GROEP_6,
+      "7": Grade.GROEP_7,
+      "8": Grade.GROEP_8,
     };
 
     // Zoek de auteur op basis van de naam
@@ -65,7 +71,7 @@ export async function updatePrompt(formData: FormData) {
       data: {
         title,
         content,
-        grade: gradeMap[grade] || Grade.HAVO,
+        grade: gradeMap[grade] || Grade.GROEP_1,
         categoryId,
         authorId: author.id,
         isApproved,
