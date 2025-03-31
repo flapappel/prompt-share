@@ -25,6 +25,7 @@ export default async function EditPromptPage({
       where: { id: params.id },
       include: {
         category: true,
+        author: true,
         likes: {
           select: {
             id: true,
@@ -51,9 +52,16 @@ export default async function EditPromptPage({
       orderBy: { name: "asc" },
     });
 
+    // Transformeer de prompt data om authorName toe te voegen
+    const promptWithAuthorName = {
+      ...prompt,
+      authorName: prompt.author.name || "Onbekend",
+      isApproved: prompt.isApproved || false,
+    };
+
     return (
       <div className="container py-8">
-        <EditForm prompt={prompt} categories={categories} />
+        <EditForm prompt={promptWithAuthorName} categories={categories} />
       </div>
     );
   } catch (error) {

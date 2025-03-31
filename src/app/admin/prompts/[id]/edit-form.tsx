@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { updatePrompt, deletePrompt, approvePrompt } from "./actions";
-import { Category } from "@prisma/client";
+import { Category, Grade } from "@prisma/client";
 import Link from "next/link";
 
 interface EditFormProps {
@@ -14,11 +14,11 @@ interface EditFormProps {
     id: string;
     title: string;
     content: string;
-    grade: string;
+    grade: Grade;
     categoryId: string;
     authorName: string;
     isApproved: boolean;
-    likes: { id: string }[];
+    likes: { id: string; userId: string; promptId: string; createdAt: Date }[];
   };
   categories: Category[];
 }
