@@ -68,14 +68,8 @@ model Contact {
 }
 
 enum Grade {
-  GROEP_1
-  GROEP_2
-  GROEP_3
-  GROEP_4
-  GROEP_5
-  GROEP_6
-  GROEP_7
-  GROEP_8
+  HAVO
+  VWO
 }
 
 enum Role {

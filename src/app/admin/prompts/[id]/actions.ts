@@ -46,15 +46,18 @@ export async function updatePrompt(formData: FormData) {
 
     // Map de grade waarde naar de juiste enum waarde
     const gradeMap: Record<string, Grade> = {
-      "1": Grade.GROEP_1,
-      "2": Grade.GROEP_2,
-      "3": Grade.GROEP_3,
-      "4": Grade.GROEP_4,
-      "5": Grade.GROEP_5,
-      "6": Grade.GROEP_6,
-      "7": Grade.GROEP_7,
-      "8": Grade.GROEP_8,
+      "HAVO": Grade.HAVO,
+      "VWO": Grade.VWO,
     };
+
+    // Zoek de auteur op basis van de naam
+    const author = await prisma.user.findFirst({
+      where: { name: authorName }
+    });
+
+    if (!author) {
+      throw new Error("Auteur niet gevonden");
+    }
 
     // Update de prompt
     await prisma.prompt.update({
@@ -62,9 +65,9 @@ export async function updatePrompt(formData: FormData) {
       data: {
         title,
         content,
-        grade: gradeMap[grade] || Grade.GROEP_1,
+        grade: gradeMap[grade] || Grade.HAVO,
         categoryId,
-        authorName,
+        authorId: author.id,
         isApproved,
       },
     });
