@@ -16,7 +16,14 @@ export default async function AdminPage() {
   const prompts = await prisma.prompt.findMany({
     include: {
       category: true,
-      likes: true,
+      likes: {
+        select: {
+          id: true,
+          userId: true,
+          promptId: true,
+          createdAt: true,
+        }
+      },
       author: true,
     },
     orderBy: {

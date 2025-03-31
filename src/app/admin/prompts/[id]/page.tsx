@@ -23,7 +23,14 @@ export default async function EditPromptPage({
     where: { id: params.id },
     include: {
       category: true,
-      likes: true,
+      likes: {
+        select: {
+          id: true,
+          userId: true,
+          promptId: true,
+          createdAt: true,
+        }
+      },
     },
   });
 

@@ -8,7 +8,14 @@ export default async function Home() {
     prisma.prompt.findMany({
       include: {
         category: true,
-        likes: true,
+        likes: {
+          select: {
+            id: true,
+            userId: true,
+            promptId: true,
+            createdAt: true,
+          }
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -18,7 +25,14 @@ export default async function Home() {
     prisma.prompt.findMany({
       include: {
         category: true,
-        likes: true,
+        likes: {
+          select: {
+            id: true,
+            userId: true,
+            promptId: true,
+            createdAt: true,
+          }
+        },
       },
       orderBy: {
         createdAt: "desc",
