@@ -75,8 +75,6 @@ enum Grade {
   GROEP_6
   GROEP_7
   GROEP_8
-  HAVO
-  VWO
 }
 
 enum Role {

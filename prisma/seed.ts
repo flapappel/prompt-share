@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Grade } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -49,7 +49,7 @@ async function main() {
       data: {
         title: 'Creatief schrijven verhaal',
         content: 'Kun je een kort verhaal schrijven over een dappere ridder die een draak moet verslaan? Het verhaal moet geschikt zijn voor kinderen uit groep 5 en moet een duidelijke moraal bevatten.',
-        grade: 'HAVO',
+        grade: 'GROEP_5' as any,
         authorId: admin.id,
         categoryId: categories[0].id, // Taal categorie
       },
@@ -58,7 +58,7 @@ async function main() {
       data: {
         title: 'Wiskunde probleem',
         content: 'Los het volgende wiskunde probleem op: Een rechthoek heeft een omtrek van 24 cm en een oppervlakte van 35 cm². Wat zijn de afmetingen van de rechthoek?',
-        grade: 'VWO',
+        grade: 'GROEP_8' as any,
         authorId: admin.id,
         categoryId: categories[1].id, // Rekenen categorie
       },
@@ -67,7 +67,7 @@ async function main() {
       data: {
         title: 'Geschiedenis essay',
         content: 'Schrijf een essay over de invloed van de industriële revolutie op de samenleving. Focus op de sociale en economische veranderingen.',
-        grade: 'VWO',
+        grade: 'GROEP_8' as any,
         authorId: admin.id,
         categoryId: categories[2].id, // Geschiedenis categorie
       },
