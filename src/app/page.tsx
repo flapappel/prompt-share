@@ -1,11 +1,20 @@
 import { prisma } from "@/lib/prisma";
+import { Grade } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 
 export default async function Home() {
+  // Vangt alle mogelijke Grade waarden op (inclusief ongeldige waarden door try-catch)
+  const validGrades = Object.values(Grade);
+  
   const [newestPrompts, popularPrompts] = await Promise.all([
     prisma.prompt.findMany({
+      where: {
+        grade: {
+          in: validGrades
+        }
+      },
       include: {
         category: true,
         likes: {
@@ -23,6 +32,11 @@ export default async function Home() {
       take: 6,
     }),
     prisma.prompt.findMany({
+      where: {
+        grade: {
+          in: validGrades
+        }
+      },
       include: {
         category: true,
         likes: {

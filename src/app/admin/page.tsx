@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Grade } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
@@ -13,7 +14,15 @@ export default async function AdminPage() {
     redirect("/login");
   }
 
+  // Vangt alle mogelijke Grade waarden op
+  const validGrades = Object.values(Grade);
+
   const prompts = await prisma.prompt.findMany({
+    where: {
+      grade: {
+        in: validGrades
+      }
+    },
     include: {
       category: true,
       likes: {
