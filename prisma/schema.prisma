@@ -51,6 +51,7 @@ model Like {
   prompt    Prompt   @relation(fields: [promptId], references: [id])
   promptId  String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, promptId])
 }
