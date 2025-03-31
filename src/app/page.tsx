@@ -8,52 +8,108 @@ export default async function Home() {
   // Vangt alle mogelijke Grade waarden op (inclusief ongeldige waarden door try-catch)
   const validGrades = Object.values(Grade);
   
-  const [newestPrompts, popularPrompts] = await Promise.all([
-    prisma.prompt.findMany({
-      where: {
-        grade: {
-          in: validGrades
-        }
-      },
-      include: {
-        category: true,
-        likes: {
-          select: {
-            id: true,
-            userId: true,
-            promptId: true,
-            createdAt: true,
+  let newestPrompts = [];
+  let popularPrompts = [];
+  
+  try {
+    // Probeer eerst de normale query met filtering op geldige grades
+    [newestPrompts, popularPrompts] = await Promise.all([
+      prisma.prompt.findMany({
+        where: {
+          grade: {
+            in: validGrades
           }
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 6,
-    }),
-    prisma.prompt.findMany({
-      where: {
-        grade: {
-          in: validGrades
-        }
-      },
-      include: {
-        category: true,
-        likes: {
-          select: {
-            id: true,
-            userId: true,
-            promptId: true,
-            createdAt: true,
+        include: {
+          category: true,
+          likes: {
+            select: {
+              id: true,
+              userId: true,
+              promptId: true,
+              createdAt: true,
+            }
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 6,
+      }),
+      prisma.prompt.findMany({
+        where: {
+          grade: {
+            in: validGrades
           }
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 6,
-    }),
-  ]);
+        include: {
+          category: true,
+          likes: {
+            select: {
+              id: true,
+              userId: true,
+              promptId: true,
+              createdAt: true,
+            }
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 6,
+      }),
+    ]);
+  } catch (error) {
+    console.error("Fout bij ophalen prompts:", error);
+    
+    // Fallback: gebruik een volledig veilige SQL query die de Grade kolom niet gebruikt in filtering
+    try {
+      // Voor nieuwste prompts
+      const rawNewestPrompts = await prisma.$queryRaw`
+        SELECT p.*, 
+          jsonb_agg(
+            jsonb_build_object(
+              'id', l.id,
+              'userId', l.\"userId\",
+              'promptId', l.\"promptId\",
+              'createdAt', l.\"createdAt\"
+            )
+          ) as likes,
+          jsonb_build_object(
+            'id', c.id,
+            'name', c.name,
+            'createdAt', c.\"createdAt\",
+            'updatedAt', c.\"updatedAt\"
+          ) as category
+        FROM "Prompt" p
+        LEFT JOIN "Category" c ON p.\"categoryId\" = c.id
+        LEFT JOIN "Like" l ON p.id = l.\"promptId\"
+        GROUP BY p.id, c.id
+        ORDER BY p.\"createdAt\" DESC
+        LIMIT 6
+      `;
+      
+      // Voor populaire prompts (zelfde query maar we gebruiken wat we hebben)
+      newestPrompts = rawNewestPrompts || [];
+      popularPrompts = rawNewestPrompts || [];
+      
+      // Formatteer de results zodat ze dezelfde structuur hebben als wat Prisma normaliter teruggeeft
+      newestPrompts = newestPrompts.map(p => ({
+        ...p,
+        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : [])
+      }));
+      
+      popularPrompts = popularPrompts.map(p => ({
+        ...p,
+        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : [])
+      }));
+    } catch (fallbackError) {
+      console.error("Fallback query ook mislukt:", fallbackError);
+      // Laatste vangnet: lege arrays
+      newestPrompts = [];
+      popularPrompts = [];
+    }
+  }
 
   return (
     <main className="container mx-auto py-10">
@@ -88,48 +144,56 @@ export default async function Home() {
 
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 text-[#1E3A8A]">Nieuwste Prompts</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {newestPrompts.map((prompt) => (
-            <Link
-              key={prompt.id}
-              href={`/prompts/${prompt.id}`}
-              className="block p-6 bg-[#EBF8FF] border-2 border-[#1E3A8A] rounded-lg shadow hover:shadow-md transition-shadow"
-            >
-              <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
-              <div className="flex gap-2 text-sm text-gray-600 mb-4">
-                <span>Leerjaar: {prompt.grade}</span>
-                <span>•</span>
-                <span>Categorie: {prompt.category.name}</span>
-                <span>•</span>
-                <span className="text-[#7C3AED]">{prompt.likes.length} likes</span>
-              </div>
-              <p className="text-gray-700 line-clamp-3">{prompt.content}</p>
-            </Link>
-          ))}
-        </div>
+        {newestPrompts.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {newestPrompts.map((prompt) => (
+              <Link
+                key={prompt.id}
+                href={`/prompts/${prompt.id}`}
+                className="block p-6 bg-[#EBF8FF] border-2 border-[#1E3A8A] rounded-lg shadow hover:shadow-md transition-shadow"
+              >
+                <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
+                <div className="flex gap-2 text-sm text-gray-600 mb-4">
+                  <span>Leerjaar: {prompt.grade}</span>
+                  <span>•</span>
+                  <span>Categorie: {prompt.category?.name || 'Algemeen'}</span>
+                  <span>•</span>
+                  <span className="text-[#7C3AED]">{prompt.likes?.length || 0} likes</span>
+                </div>
+                <p className="text-gray-700 line-clamp-3">{prompt.content}</p>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-gray-500">Geen prompts gevonden. Wees de eerste die een prompt deelt!</p>
+        )}
       </section>
 
       <section>
         <h2 className="text-2xl font-semibold mb-6 text-[#1E3A8A]">Populaire Prompts</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {popularPrompts.map((prompt) => (
-            <Link
-              key={prompt.id}
-              href={`/prompts/${prompt.id}`}
-              className="block p-6 bg-[#EBF8FF] border-2 border-[#1E3A8A] rounded-lg shadow hover:shadow-md transition-shadow"
-            >
-              <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
-              <div className="flex gap-2 text-sm text-gray-600 mb-4">
-                <span>Leerjaar: {prompt.grade}</span>
-                <span>•</span>
-                <span>Categorie: {prompt.category.name}</span>
-                <span>•</span>
-                <span className="text-[#7C3AED]">{prompt.likes.length} likes</span>
-              </div>
-              <p className="text-gray-700 line-clamp-3">{prompt.content}</p>
-            </Link>
-          ))}
-        </div>
+        {popularPrompts.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {popularPrompts.map((prompt) => (
+              <Link
+                key={prompt.id}
+                href={`/prompts/${prompt.id}`}
+                className="block p-6 bg-[#EBF8FF] border-2 border-[#1E3A8A] rounded-lg shadow hover:shadow-md transition-shadow"
+              >
+                <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
+                <div className="flex gap-2 text-sm text-gray-600 mb-4">
+                  <span>Leerjaar: {prompt.grade}</span>
+                  <span>•</span>
+                  <span>Categorie: {prompt.category?.name || 'Algemeen'}</span>
+                  <span>•</span>
+                  <span className="text-[#7C3AED]">{prompt.likes?.length || 0} likes</span>
+                </div>
+                <p className="text-gray-700 line-clamp-3">{prompt.content}</p>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-gray-500">Nog geen populaire prompts beschikbaar.</p>
+        )}
       </section>
     </main>
   );
