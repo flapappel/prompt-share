@@ -10,7 +10,9 @@ export default async function Home() {
         category: true,
         likes: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: {
+        createdAt: "desc",
+      },
       take: 6,
     }),
     prisma.prompt.findMany({
@@ -19,9 +21,7 @@ export default async function Home() {
         likes: true,
       },
       orderBy: {
-        likes: {
-          _count: "desc",
-        },
+        createdAt: "desc",
       },
       take: 6,
     }),
