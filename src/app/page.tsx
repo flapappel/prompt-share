@@ -1,19 +1,35 @@
 import { prisma } from "@/lib/prisma";
-import { Grade } from "@prisma/client";
+import { Grade, Prompt, Category, Like } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
+
+type RawPrompt = {
+  id: string;
+  title: string;
+  content: string;
+  grade: Grade;
+  categoryId: string;
+  createdAt: Date;
+  likes: {
+    id: string;
+    userId: string;
+    promptId: string;
+    createdAt: Date;
+  }[];
+  category: Category;
+};
 
 export default async function Home() {
   // Vangt alle mogelijke Grade waarden op (inclusief ongeldige waarden door try-catch)
   const validGrades = Object.values(Grade);
   
-  let newestPrompts = [];
-  let popularPrompts = [];
+  let newestPrompts: RawPrompt[] = [];
+  let popularPrompts: RawPrompt[] = [];
   
   try {
     // Probeer eerst de normale query met filtering op geldige grades
-    [newestPrompts, popularPrompts] = await Promise.all([
+    const [prismaNewestPrompts, prismaPopularPrompts] = await Promise.all([
       prisma.prompt.findMany({
         where: {
           grade: {
@@ -59,13 +75,17 @@ export default async function Home() {
         take: 6,
       }),
     ]);
+
+    // Converteer de Prisma resultaten naar RawPrompt type
+    newestPrompts = prismaNewestPrompts as RawPrompt[];
+    popularPrompts = prismaPopularPrompts as RawPrompt[];
   } catch (error) {
     console.error("Fout bij ophalen prompts:", error);
     
     // Fallback: gebruik een volledig veilige SQL query die de Grade kolom niet gebruikt in filtering
     try {
       // Voor nieuwste prompts
-      const rawNewestPrompts = await prisma.$queryRaw`
+      const rawNewestPrompts = await prisma.$queryRaw<RawPrompt[]>`
         SELECT p.*, 
           jsonb_agg(
             jsonb_build_object(
