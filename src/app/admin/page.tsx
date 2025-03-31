@@ -17,6 +17,7 @@ export default async function AdminPage() {
     include: {
       category: true,
       likes: true,
+      author: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -47,7 +48,7 @@ export default async function AdminPage() {
               <div>
                 <h2 className="text-xl font-semibold">{prompt.title}</h2>
                 <p className="text-sm text-gray-500">
-                  Door: {prompt.authorName} | {prompt.grade} |{" "}
+                  Door: {prompt.author.name} | {prompt.grade} |{" "}
                   {prompt.category.name}
                 </p>
                 <p className="text-sm text-gray-500">
@@ -79,10 +80,6 @@ export default async function AdminPage() {
             </div>
             <div className="flex items-center space-x-4 text-sm text-gray-500">
               <span>{prompt.likes.length} likes</span>
-              <span>•</span>
-              <span>
-                Status: {prompt.isApproved ? "Goedgekeurd" : "In afwachting"}
-              </span>
             </div>
           </div>
         ))}
