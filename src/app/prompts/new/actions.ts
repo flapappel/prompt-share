@@ -6,11 +6,15 @@ import { Grade } from "@prisma/client";
 
 export async function submitPrompt(formData: FormData) {
   try {
+    console.log("Start submitPrompt functie");
+    
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
     const grade = formData.get("grade") as string;
     const categoryId = formData.get("categoryId") as string;
     const authorName = formData.get("authorName") as string;
+
+    console.log("Form data:", { title, content, grade, categoryId, authorName });
 
     if (!title || !content || !grade || !categoryId || !authorName) {
       throw new Error("Alle velden zijn verplicht");
@@ -28,14 +32,34 @@ export async function submitPrompt(formData: FormData) {
       "8": Grade.GROEP_8,
     };
 
-    // Zoek de auteur op basis van de naam
-    const author = await prisma.user.findFirst({
+    // Zoek of maak een gebruiker aan voor de auteur
+    let user = await prisma.user.findFirst({
       where: { name: authorName }
     });
 
-    if (!author) {
-      throw new Error("Auteur niet gevonden");
+    if (!user) {
+      // Maak een nieuwe gebruiker aan met een unieke email
+      const timestamp = Date.now();
+      const email = `${authorName.toLowerCase().replace(/\s+/g, '.')}.${timestamp}@anonymous.com`;
+      
+      user = await prisma.user.create({
+        data: {
+          name: authorName,
+          email: email,
+          role: "USER",
+        }
+      });
     }
+
+    console.log("Gebruiker voor prompt:", user);
+
+    console.log("Creating prompt with data:", {
+      title,
+      content,
+      grade: gradeMap[grade],
+      categoryId,
+      authorId: user.id
+    });
 
     const prompt = await prisma.prompt.create({
       data: {
@@ -43,10 +67,12 @@ export async function submitPrompt(formData: FormData) {
         content,
         grade: gradeMap[grade] || Grade.GROEP_1,
         categoryId,
-        authorId: author.id,
+        authorId: user.id,
         isApproved: false,
       },
     });
+
+    console.log("Prompt succesvol aangemaakt:", prompt);
 
     revalidatePath("/");
     return { success: true, prompt };
