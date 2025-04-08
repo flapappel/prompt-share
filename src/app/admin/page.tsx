@@ -28,6 +28,12 @@ export default async function AdminPage() {
   try {
     // Haal alle prompts op zonder grade filter
     prompts = await prisma.prompt.findMany({
+      where: {
+        OR: [
+          { isApproved: true },
+          { isApproved: false }
+        ]
+      },
       include: {
         category: true,
         likes: {
