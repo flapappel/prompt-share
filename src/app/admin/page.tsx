@@ -2,10 +2,16 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Grade } from "@prisma/client";
+import { Grade, Prompt, Category, User, Like } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+
+type PromptWithRelations = Prompt & {
+  category: Category;
+  likes: Like[];
+  author: User;
+};
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
@@ -17,16 +23,11 @@ export default async function AdminPage() {
   // Vangt alle mogelijke Grade waarden op
   const validGrades = Object.values(Grade);
   
-  let prompts = [];
+  let prompts: PromptWithRelations[] = [];
 
   try {
-    // Probeer de originele query met validatie
+    // Haal alle prompts op zonder grade filter
     prompts = await prisma.prompt.findMany({
-      where: {
-        grade: {
-          in: validGrades
-        }
-      },
       include: {
         category: true,
         likes: {
@@ -35,6 +36,7 @@ export default async function AdminPage() {
             userId: true,
             promptId: true,
             createdAt: true,
+            updatedAt: true,
           }
         },
         author: true,
@@ -45,48 +47,7 @@ export default async function AdminPage() {
     });
   } catch (error) {
     console.error("Fout bij ophalen prompts in admin:", error);
-    
-    // Fallback: gebruik raw SQL om prompts op te halen zonder de grade te filteren
-    try {
-      const rawPrompts = await prisma.$queryRaw`
-        SELECT p.*, 
-          jsonb_agg(
-            jsonb_build_object(
-              'id', l.id,
-              'userId', l.\"userId\",
-              'promptId', l.\"promptId\",
-              'createdAt', l.\"createdAt\"
-            )
-          ) as likes,
-          jsonb_build_object(
-            'id', c.id,
-            'name', c.name,
-            'createdAt', c.\"createdAt\",
-            'updatedAt', c.\"updatedAt\"
-          ) as category,
-          jsonb_build_object(
-            'id', u.id,
-            'name', u.name,
-            'email', u.email
-          ) as author
-        FROM "Prompt" p
-        LEFT JOIN "Category" c ON p.\"categoryId\" = c.id
-        LEFT JOIN "User" u ON p.\"authorId\" = u.id
-        LEFT JOIN "Like" l ON p.id = l.\"promptId\"
-        GROUP BY p.id, c.id, u.id
-        ORDER BY p.\"createdAt\" DESC
-      `;
-      
-      // Formatteer resultaten om dezelfde structuur te hebben
-      prompts = Array.isArray(rawPrompts) ? rawPrompts : [];
-      prompts = prompts.map(p => ({
-        ...p,
-        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : [])
-      }));
-    } catch (fallbackError) {
-      console.error("Fallback query voor admin mislukt:", fallbackError);
-      prompts = [];
-    }
+    prompts = [];
   }
 
   return (
