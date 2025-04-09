@@ -23,6 +23,7 @@ export default async function PromptPage({
             createdAt: true,
           }
         },
+        grades: true,
       },
     });
 
@@ -32,7 +33,7 @@ export default async function PromptPage({
 
     // Controleer of de grade waarde geldig is
     const validGrades = Object.values(Grade);
-    if (!validGrades.includes(prompt.grade as Grade)) {
+    if (!validGrades.includes(prompt.grades[0]?.grade as Grade)) {
       notFound();
     }
 
@@ -41,7 +42,7 @@ export default async function PromptPage({
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold mb-4">{prompt.title}</h1>
           <div className="flex items-center gap-4 text-sm text-gray-600 mb-6">
-            <span>Leerjaar: {prompt.grade}</span>
+            <span>Leerjaar: {prompt.grades[0]?.grade || 'Geen groep'}</span>
             <span>•</span>
             <span>Categorie: {prompt.category.name}</span>
             <span>•</span>
