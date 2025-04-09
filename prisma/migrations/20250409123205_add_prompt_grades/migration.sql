@@ -4,9 +4,6 @@
   - You are about to drop the column `grade` on the `Prompt` table. All the data in the column will be lost.
 
 */
--- AlterTable
-ALTER TABLE "Prompt" DROP COLUMN "grade";
-
 -- CreateTable
 CREATE TABLE "PromptGrade" (
     "id" TEXT NOT NULL,
@@ -23,3 +20,12 @@ CREATE UNIQUE INDEX "PromptGrade_promptId_grade_key" ON "PromptGrade"("promptId"
 
 -- AddForeignKey
 ALTER TABLE "PromptGrade" ADD CONSTRAINT "PromptGrade_promptId_fkey" FOREIGN KEY ("promptId") REFERENCES "Prompt"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Migrate data
+INSERT INTO "PromptGrade" ("id", "promptId", "grade", "createdAt", "updatedAt")
+SELECT gen_random_uuid()::text, id, grade, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+FROM "Prompt"
+WHERE grade IS NOT NULL;
+
+-- Drop the old column
+ALTER TABLE "Prompt" DROP COLUMN "grade";

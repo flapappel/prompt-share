@@ -2,21 +2,25 @@ import { PrismaClient, Grade } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+interface PromptWithGrade {
+  id: string;
+  grade: Grade;
+}
+
 async function main() {
-  // Haal alle prompts op
-  const prompts = await prisma.prompt.findMany();
+  // Haal alle prompts op met hun oude grade
+  const prompts = await prisma.$queryRaw<PromptWithGrade[]>`
+    SELECT p.id, p.grade
+    FROM "Prompt" p
+    WHERE p.grade IS NOT NULL
+  `;
 
   // Voor elke prompt, maak een nieuwe PromptGrade aan
   for (const prompt of prompts) {
-    // Verwijder de oude grade kolom
-    await prisma.prompt.update({
-      where: { id: prompt.id },
+    await prisma.promptGrade.create({
       data: {
-        grades: {
-          create: {
-            grade: prompt.grade as Grade
-          }
-        }
+        promptId: prompt.id,
+        grade: prompt.grade
       }
     });
   }
