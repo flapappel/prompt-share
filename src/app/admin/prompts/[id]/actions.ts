@@ -72,10 +72,15 @@ export async function updatePrompt(formData: FormData) {
       data: {
         title,
         content,
-        grade: gradeMap[grade] || Grade.GROEP_1,
         categoryId,
         authorId: author.id,
         isApproved,
+        grades: {
+          deleteMany: {}, // Verwijder alle bestaande grades
+          create: {
+            grade: gradeMap[grade] || Grade.GROEP_1
+          }
+        }
       },
     });
 
