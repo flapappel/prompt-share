@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { submitPrompt } from "./actions";
 
@@ -25,6 +26,7 @@ export default function NewPromptPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchCategories() {
@@ -47,6 +49,9 @@ export default function NewPromptPage() {
 
     try {
       const formData = new FormData(event.currentTarget);
+      selectedGrades.forEach(grade => {
+        formData.append('grades[]', grade);
+      });
       const result = await submitPrompt(formData);
 
       if (result.success) {
@@ -75,7 +80,7 @@ export default function NewPromptPage() {
 
   return (
     <main className="container mx-auto py-10">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Nieuwe Prompt Indienen</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -103,25 +108,28 @@ export default function NewPromptPage() {
             />
           </div>
 
-          <div>
-            <label htmlFor="grade" className="block text-sm font-medium mb-2">
-              Leerjaar
-            </label>
-            <Select name="grade" required>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecteer een leerjaar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Groep 1</SelectItem>
-                <SelectItem value="2">Groep 2</SelectItem>
-                <SelectItem value="3">Groep 3</SelectItem>
-                <SelectItem value="4">Groep 4</SelectItem>
-                <SelectItem value="5">Groep 5</SelectItem>
-                <SelectItem value="6">Groep 6</SelectItem>
-                <SelectItem value="7">Groep 7</SelectItem>
-                <SelectItem value="8">Groep 8</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Groepen</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((grade) => (
+                <div key={grade} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`grade-${grade}`}
+                    checked={selectedGrades.includes(grade.toString())}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedGrades([...selectedGrades, grade.toString()]);
+                      } else {
+                        setSelectedGrades(selectedGrades.filter(g => g !== grade.toString()));
+                      }
+                    }}
+                  />
+                  <label htmlFor={`grade-${grade}`} className="text-sm">
+                    Groep {grade}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div>

@@ -8,8 +8,6 @@ type RawPrompt = {
   id: string;
   title: string;
   content: string;
-  grade: Grade;
-  categoryId: string;
   createdAt: Date;
   likes: {
     id: string;
@@ -18,6 +16,9 @@ type RawPrompt = {
     createdAt: Date;
   }[];
   category: Category;
+  grades: {
+    grade: Grade;
+  }[];
 };
 
 export default async function Home() {
@@ -32,9 +33,6 @@ export default async function Home() {
     const [prismaNewestPrompts, prismaPopularPrompts] = await Promise.all([
       prisma.prompt.findMany({
         where: {
-          grade: {
-            in: validGrades
-          },
           isApproved: true
         },
         include: {
@@ -47,6 +45,11 @@ export default async function Home() {
               createdAt: true,
             }
           },
+          grades: {
+            select: {
+              grade: true
+            }
+          }
         },
         orderBy: {
           createdAt: "desc",
@@ -55,9 +58,6 @@ export default async function Home() {
       }),
       prisma.prompt.findMany({
         where: {
-          grade: {
-            in: validGrades
-          },
           isApproved: true
         },
         include: {
@@ -70,6 +70,11 @@ export default async function Home() {
               createdAt: true,
             }
           },
+          grades: {
+            select: {
+              grade: true
+            }
+          }
         },
         orderBy: {
           createdAt: "desc",
@@ -84,9 +89,8 @@ export default async function Home() {
   } catch (error) {
     console.error("Fout bij ophalen prompts:", error);
     
-    // Fallback: gebruik een volledig veilige SQL query die de Grade kolom niet gebruikt in filtering
+    // Fallback: gebruik een volledig veilige SQL query
     try {
-      // Voor nieuwste prompts
       const rawNewestPrompts = await prisma.$queryRaw<RawPrompt[]>`
         SELECT p.*, 
           jsonb_agg(
@@ -102,29 +106,36 @@ export default async function Home() {
             'name', c.name,
             'createdAt', c.\"createdAt\",
             'updatedAt', c.\"updatedAt\"
-          ) as category
+          ) as category,
+          jsonb_agg(
+            jsonb_build_object(
+              'grade', pg.grade
+            )
+          ) as grades
         FROM "Prompt" p
         LEFT JOIN "Category" c ON p.\"categoryId\" = c.id
         LEFT JOIN "Like" l ON p.id = l.\"promptId\"
+        LEFT JOIN "PromptGrade" pg ON p.id = pg.\"promptId\"
         WHERE p.\"isApproved\" = true
         GROUP BY p.id, c.id
         ORDER BY p.\"createdAt\" DESC
         LIMIT 6
       `;
       
-      // Voor populaire prompts (zelfde query maar we gebruiken wat we hebben)
       newestPrompts = rawNewestPrompts || [];
       popularPrompts = rawNewestPrompts || [];
       
       // Formatteer de results zodat ze dezelfde structuur hebben als wat Prisma normaliter teruggeeft
       newestPrompts = newestPrompts.map(p => ({
         ...p,
-        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : [])
+        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : []),
+        grades: Array.isArray(p.grades) ? p.grades : (p.grades ? [p.grades] : [])
       }));
       
       popularPrompts = popularPrompts.map(p => ({
         ...p,
-        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : [])
+        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : []),
+        grades: Array.isArray(p.grades) ? p.grades : (p.grades ? [p.grades] : [])
       }));
     } catch (fallbackError) {
       console.error("Fallback query ook mislukt:", fallbackError);
@@ -177,7 +188,7 @@ export default async function Home() {
               >
                 <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
                 <div className="flex gap-2 text-sm text-gray-600 mb-4">
-                  <span>Leerjaar: {prompt.grade}</span>
+                  <span>Groepen: {prompt.grades.map(g => g.grade).join(", ")}</span>
                   <span>•</span>
                   <span>Categorie: {prompt.category?.name || 'Algemeen'}</span>
                   <span>•</span>
@@ -204,7 +215,7 @@ export default async function Home() {
               >
                 <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
                 <div className="flex gap-2 text-sm text-gray-600 mb-4">
-                  <span>Leerjaar: {prompt.grade}</span>
+                  <span>Groepen: {prompt.grades.map(g => g.grade).join(", ")}</span>
                   <span>•</span>
                   <span>Categorie: {prompt.category?.name || 'Algemeen'}</span>
                   <span>•</span>

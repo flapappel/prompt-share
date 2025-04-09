@@ -10,17 +10,17 @@ export async function submitPrompt(formData: FormData) {
     
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
-    const grade = formData.get("grade") as string;
     const categoryId = formData.get("categoryId") as string;
     const authorName = formData.get("authorName") as string;
+    const grades = formData.getAll("grades[]") as string[];
 
-    console.log("Form data:", { title, content, grade, categoryId, authorName });
+    console.log("Form data:", { title, content, grades, categoryId, authorName });
 
-    if (!title || !content || !grade || !categoryId || !authorName) {
+    if (!title || !content || !grades.length || !categoryId || !authorName) {
       throw new Error("Alle velden zijn verplicht");
     }
 
-    // Map de grade waarde naar de juiste enum waarde
+    // Map de grade waarden naar de juiste enum waarden
     const gradeMap: Record<string, Grade> = {
       "1": Grade.GROEP_1,
       "2": Grade.GROEP_2,
@@ -53,22 +53,19 @@ export async function submitPrompt(formData: FormData) {
 
     console.log("Gebruiker voor prompt:", user);
 
-    console.log("Creating prompt with data:", {
-      title,
-      content,
-      grade: gradeMap[grade],
-      categoryId,
-      authorId: user.id
-    });
-
+    // Maak de prompt aan
     const prompt = await prisma.prompt.create({
       data: {
         title,
         content,
-        grade: gradeMap[grade] || Grade.GROEP_1,
         categoryId,
         authorId: user.id,
         isApproved: false,
+        grades: {
+          create: grades.map(grade => ({
+            grade: gradeMap[grade] || Grade.GROEP_1
+          }))
+        }
       },
     });
 

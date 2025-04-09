@@ -26,7 +26,6 @@ model Prompt {
   id          String   @id @default(cuid())
   title       String
   content     String
-  grade       Grade
   category    Category @relation(fields: [categoryId], references: [id])
   categoryId  String
   author      User     @relation(fields: [authorId], references: [id])
@@ -35,6 +34,18 @@ model Prompt {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   likes       Like[]
+  grades      PromptGrade[]
+}
+
+model PromptGrade {
+  id        String   @id @default(cuid())
+  prompt    Prompt   @relation(fields: [promptId], references: [id])
+  promptId  String
+  grade     Grade
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([promptId, grade])
 }
 
 model Category {
