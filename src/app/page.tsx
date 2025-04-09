@@ -6,19 +6,16 @@ import Image from "next/image";
 
 type RawPrompt = {
   id: string;
+  createdAt: Date;
+  updatedAt: Date;
   title: string;
   content: string;
-  createdAt: Date;
-  likes: {
-    id: string;
-    userId: string;
-    promptId: string;
-    createdAt: Date;
-  }[];
-  category: Category;
-  grades: {
-    grade: Grade;
-  }[];
+  categoryId: string;
+  authorId: string;
+  isApproved: boolean;
+  likes: { id: string }[];
+  category: { id: string; name: string };
+  author: { name: string | null };
 };
 
 export default async function Home() {
@@ -37,17 +34,17 @@ export default async function Home() {
         },
         include: {
           category: true,
+          author: {
+            select: {
+              name: true
+            }
+          },
           likes: {
             select: {
               id: true,
               userId: true,
               promptId: true,
               createdAt: true,
-            }
-          },
-          grades: {
-            select: {
-              grade: true
             }
           }
         },
@@ -58,26 +55,21 @@ export default async function Home() {
       }),
       prisma.prompt.findMany({
         where: {
-          isApproved: true
+          isApproved: true,
         },
         include: {
-          category: true,
-          likes: {
+          author: {
             select: {
-              id: true,
-              userId: true,
-              promptId: true,
-              createdAt: true,
-            }
+              name: true,
+            },
           },
-          grades: {
-            select: {
-              grade: true
-            }
-          }
+          category: true,
+          likes: true,
         },
         orderBy: {
-          createdAt: "desc",
+          likes: {
+            _count: 'desc',
+          },
         },
         take: 6,
       }),
@@ -107,17 +99,15 @@ export default async function Home() {
             'createdAt', c.\"createdAt\",
             'updatedAt', c.\"updatedAt\"
           ) as category,
-          jsonb_agg(
-            jsonb_build_object(
-              'grade', pg.grade
-            )
-          ) as grades
+          jsonb_build_object(
+            'name', u.name
+          ) as author
         FROM "Prompt" p
         LEFT JOIN "Category" c ON p.\"categoryId\" = c.id
         LEFT JOIN "Like" l ON p.id = l.\"promptId\"
-        LEFT JOIN "PromptGrade" pg ON p.id = pg.\"promptId\"
+        LEFT JOIN "User" u ON p.\"authorId\" = u.id
         WHERE p.\"isApproved\" = true
-        GROUP BY p.id, c.id
+        GROUP BY p.id, c.id, u.name
         ORDER BY p.\"createdAt\" DESC
         LIMIT 6
       `;
@@ -128,14 +118,12 @@ export default async function Home() {
       // Formatteer de results zodat ze dezelfde structuur hebben als wat Prisma normaliter teruggeeft
       newestPrompts = newestPrompts.map(p => ({
         ...p,
-        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : []),
-        grades: Array.isArray(p.grades) ? p.grades : (p.grades ? [p.grades] : [])
+        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : [])
       }));
       
       popularPrompts = popularPrompts.map(p => ({
         ...p,
-        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : []),
-        grades: Array.isArray(p.grades) ? p.grades : (p.grades ? [p.grades] : [])
+        likes: Array.isArray(p.likes) ? p.likes : (p.likes ? [p.likes] : [])
       }));
     } catch (fallbackError) {
       console.error("Fallback query ook mislukt:", fallbackError);
@@ -188,8 +176,6 @@ export default async function Home() {
               >
                 <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
                 <div className="flex gap-2 text-sm text-gray-600 mb-4">
-                  <span>Groepen: {prompt.grades.map(g => g.grade).join(", ")}</span>
-                  <span>•</span>
                   <span>Categorie: {prompt.category?.name || 'Algemeen'}</span>
                   <span>•</span>
                   <span className="text-[#7C3AED]">{prompt.likes?.length || 0} likes</span>
@@ -215,8 +201,6 @@ export default async function Home() {
               >
                 <h3 className="text-xl font-semibold mb-2 text-[#1E3A8A]">{prompt.title}</h3>
                 <div className="flex gap-2 text-sm text-gray-600 mb-4">
-                  <span>Groepen: {prompt.grades.map(g => g.grade).join(", ")}</span>
-                  <span>•</span>
                   <span>Categorie: {prompt.category?.name || 'Algemeen'}</span>
                   <span>•</span>
                   <span className="text-[#7C3AED]">{prompt.likes?.length || 0} likes</span>
