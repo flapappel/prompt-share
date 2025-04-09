@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Grade, Prompt, Category, User, Like } from "@prisma/client";
+import { Grade, Prompt, Category, User, Like, PromptGrade } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
@@ -11,6 +11,7 @@ type PromptWithRelations = Prompt & {
   category: Category;
   likes: Like[];
   author: User;
+  grades: PromptGrade[];
 };
 
 export default async function AdminPage() {
@@ -46,6 +47,7 @@ export default async function AdminPage() {
           }
         },
         author: true,
+        grades: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -81,7 +83,7 @@ export default async function AdminPage() {
                 <div>
                   <h2 className="text-xl font-semibold">{prompt.title}</h2>
                   <p className="text-sm text-gray-500">
-                    Door: {prompt.author?.name || 'Anoniem'} | {prompt.grade} |{" "}
+                    Door: {prompt.author?.name || 'Anoniem'} | {prompt.grades[0]?.grade || 'Geen groep'} |{" "}
                     {prompt.category?.name || 'Algemeen'}
                   </p>
                   <p className="text-sm text-gray-500">
