@@ -34,7 +34,8 @@ export default async function Home() {
         where: {
           grade: {
             in: validGrades
-          }
+          },
+          isApproved: true
         },
         include: {
           category: true,
@@ -56,7 +57,8 @@ export default async function Home() {
         where: {
           grade: {
             in: validGrades
-          }
+          },
+          isApproved: true
         },
         include: {
           category: true,
@@ -104,6 +106,7 @@ export default async function Home() {
         FROM "Prompt" p
         LEFT JOIN "Category" c ON p.\"categoryId\" = c.id
         LEFT JOIN "Like" l ON p.id = l.\"promptId\"
+        WHERE p.\"isApproved\" = true
         GROUP BY p.id, c.id
         ORDER BY p.\"createdAt\" DESC
         LIMIT 6
