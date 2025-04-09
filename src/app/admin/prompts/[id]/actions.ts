@@ -19,6 +19,7 @@ export async function approvePrompt(formData: FormData) {
     });
 
     revalidatePath("/admin");
+    revalidatePath("/");
     return { success: true };
   } catch (error) {
     console.error("Fout bij het goedkeuren van de prompt:", error);
@@ -108,6 +109,7 @@ export async function updatePrompt(formData: FormData) {
     }
 
     revalidatePath("/admin");
+    revalidatePath("/");
     return { success: true };
   } catch (error) {
     console.error("Fout bij het bijwerken van de prompt:", error);
