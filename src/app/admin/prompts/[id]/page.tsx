@@ -34,6 +34,7 @@ export default async function EditPromptPage({
             createdAt: true,
           }
         },
+        grades: true,
       },
     });
 
@@ -43,7 +44,7 @@ export default async function EditPromptPage({
 
     // Controleer of de grade waarde geldig is
     const validGrades = Object.values(Grade);
-    if (!validGrades.includes(prompt.grade as Grade)) {
+    if (!validGrades.includes(prompt.grades[0]?.grade as Grade)) {
       // Als de grade ongeldig is, redirect naar admin
       redirect("/admin");
     }
@@ -57,6 +58,7 @@ export default async function EditPromptPage({
       ...prompt,
       authorName: prompt.author.name || "Onbekend",
       isApproved: prompt.isApproved || false,
+      grade: prompt.grades[0]?.grade || Grade.GROEP_1,
     };
 
     return (
