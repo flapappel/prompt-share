@@ -139,6 +139,7 @@ export async function deletePrompt(formData: FormData) {
     });
 
     revalidatePath("/admin");
+    revalidatePath("/");
     return { success: true };
   } catch (error) {
     console.error("Fout bij het verwijderen van de prompt:", error);
