@@ -49,27 +49,39 @@ async function main() {
       data: {
         title: 'Creatief schrijven verhaal',
         content: 'Kun je een kort verhaal schrijven over een dappere ridder die een draak moet verslaan? Het verhaal moet geschikt zijn voor kinderen uit groep 5 en moet een duidelijke moraal bevatten.',
-        grade: 'GROEP_5' as any,
         authorId: admin.id,
         categoryId: categories[0].id, // Taal categorie
+        grades: {
+          create: {
+            grade: 'GROEP_5'
+          }
+        }
       },
     }),
     prisma.prompt.create({
       data: {
         title: 'Wiskunde probleem',
         content: 'Los het volgende wiskunde probleem op: Een rechthoek heeft een omtrek van 24 cm en een oppervlakte van 35 cm². Wat zijn de afmetingen van de rechthoek?',
-        grade: 'GROEP_8' as any,
         authorId: admin.id,
         categoryId: categories[1].id, // Rekenen categorie
+        grades: {
+          create: {
+            grade: 'GROEP_8'
+          }
+        }
       },
     }),
     prisma.prompt.create({
       data: {
         title: 'Geschiedenis essay',
         content: 'Schrijf een essay over de invloed van de industriële revolutie op de samenleving. Focus op de sociale en economische veranderingen.',
-        grade: 'GROEP_8' as any,
         authorId: admin.id,
         categoryId: categories[2].id, // Geschiedenis categorie
+        grades: {
+          create: {
+            grade: 'GROEP_8'
+          }
+        }
       },
     }),
   ]);
