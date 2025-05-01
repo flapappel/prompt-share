@@ -7,10 +7,9 @@ import { Heart } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { nl } from "date-fns/locale";
-import { useTransition } from "react";
+import { useTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
 
 interface PromptCardProps {
   prompt: Prompt & {
@@ -28,16 +27,21 @@ interface PromptCardProps {
 
 export function PromptCard({ prompt }: PromptCardProps) {
   const [isPending, startTransition] = useTransition();
+  const [hasLiked, setHasLiked] = useState(false);
   const router = useRouter();
-  const { data: session } = useSession();
+
+  useEffect(() => {
+    // Check of deze prompt al geliked is door deze gebruiker
+    const likedPrompts = JSON.parse(localStorage.getItem("likedPrompts") || "[]");
+    setHasLiked(likedPrompts.includes(prompt.id));
+  }, [prompt.id]);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!session) {
-      toast.error("Je moet ingelogd zijn om een prompt te liken");
-      router.push("/login");
+    if (hasLiked) {
+      toast.error("Je hebt deze prompt al geliked");
       return;
     }
 
@@ -57,8 +61,14 @@ export function PromptCard({ prompt }: PromptCardProps) {
           throw new Error(data.error || "Er is een fout opgetreden bij het liken van de prompt");
         }
 
+        // Sla de gelikete prompt op in localStorage
+        const likedPrompts = JSON.parse(localStorage.getItem("likedPrompts") || "[]");
+        likedPrompts.push(prompt.id);
+        localStorage.setItem("likedPrompts", JSON.stringify(likedPrompts));
+        setHasLiked(true);
+
         console.log("Like successful:", data);
-        toast.success(data.action === "liked" ? "Prompt geliked!" : "Like verwijderd");
+        toast.success("Prompt geliked!");
         router.refresh();
       } catch (error) {
         console.error("Error liking prompt:", error);
@@ -88,11 +98,13 @@ export function PromptCard({ prompt }: PromptCardProps) {
           <div className="flex items-center gap-4">
             <button
               onClick={handleLike}
-              disabled={isPending}
-              className="flex items-center gap-1 hover:text-primary transition-colors disabled:opacity-50"
-              title={session ? "Klik om te liken" : "Log in om te liken"}
+              disabled={isPending || hasLiked}
+              className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                hasLiked ? "text-primary" : "hover:text-primary"
+              }`}
+              title={hasLiked ? "Je hebt deze prompt al geliked" : "Klik om te liken"}
             >
-              <Heart className={`h-4 w-4 ${isPending ? "animate-pulse" : ""}`} />
+              <Heart className={`h-4 w-4 ${isPending ? "animate-pulse" : ""} ${hasLiked ? "fill-current" : ""}`} />
               <span>{prompt.likes.length}</span>
             </button>
           </div>
