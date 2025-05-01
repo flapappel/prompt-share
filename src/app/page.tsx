@@ -14,18 +14,14 @@ export default async function Home() {
       include: {
         category: true,
         grades: true,
-        likes: {
-          select: {
-            id: true,
-          },
-        },
+        likes: true,
       },
       orderBy: {
         likes: {
           _count: "desc",
         },
       },
-      take: 6,
+      take: 3,
     }),
     prisma.prompt.findMany({
       where: {
@@ -34,16 +30,12 @@ export default async function Home() {
       include: {
         category: true,
         grades: true,
-        likes: {
-          select: {
-            id: true,
-          },
-        },
+        likes: true,
       },
       orderBy: {
         createdAt: "desc",
       },
-      take: 6,
+      take: 3,
     }),
     prisma.category.findMany(),
   ]);

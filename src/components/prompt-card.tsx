@@ -28,6 +28,7 @@ interface PromptCardProps {
 export function PromptCard({ prompt }: PromptCardProps) {
   const [isPending, startTransition] = useTransition();
   const [hasLiked, setHasLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(prompt.likes.length);
   const router = useRouter();
 
   useEffect(() => {
@@ -66,6 +67,7 @@ export function PromptCard({ prompt }: PromptCardProps) {
         likedPrompts.push(prompt.id);
         localStorage.setItem("likedPrompts", JSON.stringify(likedPrompts));
         setHasLiked(true);
+        setLikeCount(prev => prev + 1);
 
         console.log("Like successful:", data);
         toast.success("Prompt geliked!");
@@ -105,7 +107,7 @@ export function PromptCard({ prompt }: PromptCardProps) {
               title={hasLiked ? "Je hebt deze prompt al geliked" : "Klik om te liken"}
             >
               <Heart className={`h-4 w-4 ${isPending ? "animate-pulse" : ""} ${hasLiked ? "fill-current" : ""}`} />
-              <span>{prompt.likes.length}</span>
+              <span>{likeCount}</span>
             </button>
           </div>
           <span>{formatDistanceToNow(new Date(prompt.createdAt), { addSuffix: true, locale: nl })}</span>
