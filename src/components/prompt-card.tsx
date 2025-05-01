@@ -10,6 +10,7 @@ import { nl } from "date-fns/locale";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 interface PromptCardProps {
   prompt: Prompt & {
@@ -28,10 +29,17 @@ interface PromptCardProps {
 export function PromptCard({ prompt }: PromptCardProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const { data: session } = useSession();
 
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!session) {
+      toast.error("Je moet ingelogd zijn om een prompt te liken");
+      router.push("/login");
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -50,7 +58,7 @@ export function PromptCard({ prompt }: PromptCardProps) {
         }
 
         console.log("Like successful:", data);
-        toast.success("Prompt geliked!");
+        toast.success(data.action === "liked" ? "Prompt geliked!" : "Like verwijderd");
         router.refresh();
       } catch (error) {
         console.error("Error liking prompt:", error);
@@ -82,6 +90,7 @@ export function PromptCard({ prompt }: PromptCardProps) {
               onClick={handleLike}
               disabled={isPending}
               className="flex items-center gap-1 hover:text-primary transition-colors disabled:opacity-50"
+              title={session ? "Klik om te liken" : "Log in om te liken"}
             >
               <Heart className={`h-4 w-4 ${isPending ? "animate-pulse" : ""}`} />
               <span>{prompt.likes.length}</span>
