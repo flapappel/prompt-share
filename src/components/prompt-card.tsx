@@ -1,3 +1,5 @@
+"use client";
+
 import { Prompt } from "@prisma/client";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +7,6 @@ import { Heart } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { nl } from "date-fns/locale";
-import { likePrompt } from "@/app/prompts/[id]/actions";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -28,21 +29,24 @@ export function PromptCard({ prompt }: PromptCardProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const handleLike = (e: React.MouseEvent) => {
+  const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    startTransition(async () => {
-      const formData = new FormData();
-      formData.append("promptId", prompt.id);
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/like`, {
+        method: "POST",
+      });
 
-      const result = await likePrompt(null, formData);
-      if (result?.error) {
-        toast.error(result.error);
-      } else {
-        router.refresh();
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Er is een fout opgetreden bij het liken van de prompt");
       }
-    });
+
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Er is een fout opgetreden");
+    }
   };
 
   return (
