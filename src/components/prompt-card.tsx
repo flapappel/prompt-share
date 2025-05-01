@@ -1,7 +1,7 @@
 import { Prompt } from "@prisma/client";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageSquare } from "lucide-react";
+import { Heart } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -15,9 +15,6 @@ interface PromptCardProps {
       grade: string;
     }[];
     likes: {
-      id: string;
-    }[];
-    comments: {
       id: string;
     }[];
   };
@@ -46,10 +43,6 @@ export function PromptCard({ prompt }: PromptCardProps) {
             <div className="flex items-center gap-1">
               <Heart className="h-4 w-4" />
               <span>{prompt.likes.length}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <MessageSquare className="h-4 w-4" />
-              <span>{prompt.comments.length}</span>
             </div>
           </div>
           <span>{formatDistanceToNow(new Date(prompt.createdAt), { addSuffix: true, locale: nl })}</span>

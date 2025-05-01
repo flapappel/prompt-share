@@ -16,11 +16,6 @@ export default async function Home() {
             id: true,
           },
         },
-        comments: {
-          select: {
-            id: true,
-          },
-        },
       },
       orderBy: {
         createdAt: "desc",
