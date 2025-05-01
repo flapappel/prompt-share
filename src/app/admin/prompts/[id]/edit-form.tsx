@@ -1,72 +1,103 @@
 "use client";
 
+import { useState } from "react";
+import { useFormState } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Grade } from "@prisma/client";
 import { updatePrompt, deletePrompt, approvePrompt } from "./actions";
-import { Category, Grade } from "@prisma/client";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface EditFormProps {
   prompt: {
     id: string;
     title: string;
     content: string;
-    grade: Grade;
     categoryId: string;
-    authorName: string;
-    isApproved: boolean;
-    likes: { id: string; userId: string; promptId: string; createdAt: Date }[];
+    grades: { grade: Grade }[];
   };
-  categories: Category[];
+  categories: { id: string; name: string }[];
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="bg-[#1E3A8A] hover:bg-[#1E3A8A]/90">
+      {pending ? "Opslaan..." : "Opslaan"}
+    </Button>
+  );
 }
 
 export function EditForm({ prompt, categories }: EditFormProps) {
-  async function handleUpdate(formData: FormData) {
-    const result = await updatePrompt(formData);
-    if (result.success) {
-      window.location.href = "/admin";
-    } else {
-      alert(result.error);
-    }
-  }
+  const router = useRouter();
+  const [selectedGrades, setSelectedGrades] = useState<Grade[]>(
+    prompt.grades.map(g => g.grade)
+  );
 
-  async function handleDelete(formData: FormData) {
-    if (confirm("Weet je zeker dat je deze prompt wilt verwijderen?")) {
-      const result = await deletePrompt(formData);
-      if (result.success) {
-        window.location.href = "/admin";
+  const handleGradeChange = (grade: Grade) => {
+    setSelectedGrades(prev => {
+      if (prev.includes(grade)) {
+        return prev.filter(g => g !== grade);
       } else {
-        alert(result.error);
+        return [...prev, grade];
+      }
+    });
+  };
+
+  const handleSubmit = async (formData: FormData) => {
+    formData.append("grades", JSON.stringify(selectedGrades));
+    const result = await updatePrompt(null, formData);
+    if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Prompt succesvol bijgewerkt");
+      router.refresh();
+    }
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm("Weet je zeker dat je deze prompt wilt verwijderen?")) {
+      const formData = new FormData();
+      formData.append("id", prompt.id);
+      const result = await deletePrompt(null, formData);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Prompt succesvol verwijderd");
+        router.push("/admin/prompts");
       }
     }
-  }
+  };
 
-  async function handleApprove(formData: FormData) {
-    const result = await approvePrompt(formData);
-    if (result.success) {
-      window.location.href = "/admin";
+  const handleApprove = async () => {
+    const formData = new FormData();
+    formData.append("id", prompt.id);
+    const result = await approvePrompt(null, formData);
+    if (result?.error) {
+      toast.error(result.error);
     } else {
-      alert(result.error);
+      toast.success("Prompt succesvol goedgekeurd");
+      router.refresh();
     }
-  }
+  };
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Prompt Bewerken</h1>
-        <Link href="/admin">
-          <Button variant="outline">Terug naar Admin</Button>
-        </Link>
-      </div>
-
-      <form action={handleUpdate} className="space-y-6">
+    <div className="space-y-6">
+      <form action={handleSubmit} className="space-y-4">
         <input type="hidden" name="id" value={prompt.id} />
         
-        <div className="space-y-2">
-          <label htmlFor="title" className="text-sm font-medium">
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
             Titel
           </label>
           <Input
@@ -74,45 +105,30 @@ export function EditForm({ prompt, categories }: EditFormProps) {
             name="title"
             defaultValue={prompt.title}
             required
+            className="mt-1"
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="authorName" className="text-sm font-medium">
-            Auteur
+        <div>
+          <label htmlFor="content" className="block text-sm font-medium text-gray-700">
+            Inhoud
           </label>
-          <Input
-            id="authorName"
-            name="authorName"
-            defaultValue={prompt.authorName}
+          <Textarea
+            id="content"
+            name="content"
+            defaultValue={prompt.content}
             required
+            className="mt-1"
+            rows={10}
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="grade" className="text-sm font-medium">
-            Groep
-          </label>
-          <Select name="grade" defaultValue={prompt.grade}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecteer een groep" />
-            </SelectTrigger>
-            <SelectContent>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((grade) => (
-                <SelectItem key={grade} value={grade.toString()}>
-                  Groep {grade}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="categoryId" className="text-sm font-medium">
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
             Categorie
           </label>
           <Select name="categoryId" defaultValue={prompt.categoryId}>
-            <SelectTrigger>
+            <SelectTrigger className="mt-1">
               <SelectValue placeholder="Selecteer een categorie" />
             </SelectTrigger>
             <SelectContent>
@@ -125,60 +141,47 @@ export function EditForm({ prompt, categories }: EditFormProps) {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="content" className="text-sm font-medium">
-            Inhoud
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Groepen
           </label>
-          <Textarea
-            id="content"
-            name="content"
-            defaultValue={prompt.content}
-            required
-            className="min-h-[200px]"
-          />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {Object.values(Grade).map((grade) => (
+              <div key={grade} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={grade}
+                  checked={selectedGrades.includes(grade)}
+                  onChange={() => handleGradeChange(grade)}
+                  className="h-4 w-4 text-[#1E3A8A] border-gray-300 rounded"
+                />
+                <label htmlFor={grade} className="text-sm text-gray-700">
+                  {grade.replace("_", " ")}
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="likesCount" className="text-sm font-medium">
-            Aantal Likes
-          </label>
-          <Input
-            id="likesCount"
-            name="likesCount"
-            type="number"
-            defaultValue={prompt.likes.length}
-            min="0"
-          />
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="isApproved"
-            name="isApproved"
-            defaultChecked={prompt.isApproved}
-          />
-          <label htmlFor="isApproved" className="text-sm font-medium">
-            Goedgekeurd
-          </label>
-        </div>
-
-        <Button type="submit">Opslaan</Button>
-      </form>
-
-      <div className="flex justify-end gap-2">
-        <form action={handleApprove}>
-          <input type="hidden" name="id" value={prompt.id} />
-          <Button type="submit" variant="secondary">
+        <div className="flex gap-4">
+          <SubmitButton />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleApprove}
+            className="border-[#1E3A8A] text-[#1E3A8A] hover:bg-[#1E3A8A]/10"
+          >
             Goedkeuren
           </Button>
-        </form>
-        <form action={handleDelete}>
-          <input type="hidden" name="id" value={prompt.id} />
-          <Button type="submit" variant="destructive">
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+          >
             Verwijderen
           </Button>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 } 
