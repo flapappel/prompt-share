@@ -6,7 +6,27 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default async function Home() {
-  const [prompts, categories] = await Promise.all([
+  const [popularPrompts, newestPrompts, categories] = await Promise.all([
+    prisma.prompt.findMany({
+      where: {
+        isApproved: true,
+      },
+      include: {
+        category: true,
+        grades: true,
+        likes: {
+          select: {
+            id: true,
+          },
+        },
+      },
+      orderBy: {
+        likes: {
+          _count: "desc",
+        },
+      },
+      take: 6,
+    }),
     prisma.prompt.findMany({
       where: {
         isApproved: true,
@@ -62,11 +82,24 @@ export default async function Home() {
       <div className="mb-8">
         <SearchPrompt categories={categories} />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {prompts.map((prompt) => (
-          <PromptCard key={prompt.id} prompt={prompt} />
-        ))}
-      </div>
+
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-6 text-[#1E3A8A]">Populaire Prompts</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {popularPrompts.map((prompt) => (
+            <PromptCard key={prompt.id} prompt={prompt} />
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-6 text-[#1E3A8A]">Nieuwste Prompts</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {newestPrompts.map((prompt) => (
+            <PromptCard key={prompt.id} prompt={prompt} />
+          ))}
+        </div>
+      </section>
     </main>
   );
 } 
