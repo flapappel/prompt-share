@@ -33,20 +33,30 @@ export function PromptCard({ prompt }: PromptCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    try {
-      const response = await fetch(`/api/prompts/${prompt.id}/like`, {
-        method: "POST",
-      });
+    startTransition(async () => {
+      try {
+        console.log("Liking prompt:", prompt.id);
+        const response = await fetch(`/api/prompts/${prompt.id}/like`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
-      if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Er is een fout opgetreden bij het liken van de prompt");
-      }
 
-      router.refresh();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Er is een fout opgetreden");
-    }
+        if (!response.ok) {
+          throw new Error(data.error || "Er is een fout opgetreden bij het liken van de prompt");
+        }
+
+        console.log("Like successful:", data);
+        toast.success("Prompt geliked!");
+        router.refresh();
+      } catch (error) {
+        console.error("Error liking prompt:", error);
+        toast.error(error instanceof Error ? error.message : "Er is een fout opgetreden");
+      }
+    });
   };
 
   return (
@@ -71,9 +81,9 @@ export function PromptCard({ prompt }: PromptCardProps) {
             <button
               onClick={handleLike}
               disabled={isPending}
-              className="flex items-center gap-1 hover:text-primary transition-colors"
+              className="flex items-center gap-1 hover:text-primary transition-colors disabled:opacity-50"
             >
-              <Heart className="h-4 w-4" />
+              <Heart className={`h-4 w-4 ${isPending ? "animate-pulse" : ""}`} />
               <span>{prompt.likes.length}</span>
             </button>
           </div>
