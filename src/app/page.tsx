@@ -3,6 +3,7 @@ import { Grade, Prompt, Category, Like } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
+import { SearchPrompt } from "@/components/search-prompt";
 
 type RawPrompt = {
   id: string;
@@ -162,6 +163,10 @@ export default async function Home() {
             <Button variant="outline" className="border-[#1E3A8A] text-[#1E3A8A] hover:bg-[#1E3A8A]/10">Hoe gebruik je prompts in AI-tools?</Button>
           </Link>
         </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto mb-12">
+        <SearchPrompt categories={await prisma.category.findMany()} />
       </div>
 
       <section className="mb-12">
