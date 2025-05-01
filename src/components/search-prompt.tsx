@@ -17,19 +17,22 @@ interface SearchPromptProps {
   categories: Category[];
 }
 
+const ALL_GRADES = "all_grades";
+const ALL_CATEGORIES = "all_categories";
+
 export function SearchPrompt({ categories }: SearchPromptProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
-  const [selectedGrade, setSelectedGrade] = useState<Grade | "">(searchParams.get("grade") as Grade || "");
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "");
+  const [selectedGrade, setSelectedGrade] = useState<string>(searchParams.get("grade") || ALL_GRADES);
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || ALL_CATEGORIES);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
-    if (selectedGrade) params.set("grade", selectedGrade);
-    if (selectedCategory) params.set("category", selectedCategory);
+    if (selectedGrade && selectedGrade !== ALL_GRADES) params.set("grade", selectedGrade);
+    if (selectedCategory && selectedCategory !== ALL_CATEGORIES) params.set("category", selectedCategory);
     
     router.push(`/search?${params.toString()}`);
   };
@@ -49,12 +52,12 @@ export function SearchPrompt({ categories }: SearchPromptProps) {
       </div>
       
       <div className="flex gap-4">
-        <Select value={selectedGrade} onValueChange={(value) => setSelectedGrade(value as Grade)}>
+        <Select value={selectedGrade} onValueChange={setSelectedGrade}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Selecteer groep" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Alle groepen</SelectItem>
+            <SelectItem value={ALL_GRADES}>Alle groepen</SelectItem>
             {Object.values(Grade).map((grade) => (
               <SelectItem key={grade} value={grade}>
                 {grade.replace("_", " ")}
@@ -68,7 +71,7 @@ export function SearchPrompt({ categories }: SearchPromptProps) {
             <SelectValue placeholder="Selecteer categorie" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Alle categorieën</SelectItem>
+            <SelectItem value={ALL_CATEGORIES}>Alle categorieën</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { SearchPrompt } from "@/components/search-prompt";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Grade } from "@prisma/client";
 
 interface SearchPageProps {
   searchParams: {
@@ -24,8 +25,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             { content: { contains: query, mode: "insensitive" } },
           ],
         } : {},
-        grade ? { grades: { some: { grade: grade as any } } } : {},
-        category ? { categoryId: category } : {},
+        grade && grade !== "all_grades" ? { grades: { some: { grade: grade as Grade } } } : {},
+        category && category !== "all_categories" ? { categoryId: category } : {},
       ],
     },
     include: {
@@ -42,16 +43,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     },
   });
 
+  const categories = await prisma.category.findMany();
+
   return (
     <main className="container mx-auto py-10">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6 text-[#1E3A8A]">Zoek Prompts</h1>
         
-        <SearchPrompt categories={await prisma.category.findMany()} />
+        <SearchPrompt categories={categories} />
         
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4 text-[#1E3A8A]">
             {prompts.length} {prompts.length === 1 ? "resultaat" : "resultaten"} gevonden
+            {query && <span> voor &quot;{query}&quot;</span>}
           </h2>
           
           {prompts.length > 0 ? (
