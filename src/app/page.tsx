@@ -10,7 +10,7 @@ export default async function Home() {
       },
       include: {
         category: true,
-        promptGrades: true,
+        grades: true,
         likes: {
           select: {
             id: true,

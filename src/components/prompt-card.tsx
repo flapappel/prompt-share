@@ -11,7 +11,7 @@ interface PromptCardProps {
     category: {
       name: string;
     };
-    promptGrades: {
+    grades: {
       grade: string;
     }[];
     likes: {
@@ -34,7 +34,7 @@ export function PromptCard({ prompt }: PromptCardProps) {
           <p className="text-sm text-muted-foreground line-clamp-3">{prompt.content}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Badge variant="secondary">{prompt.category.name}</Badge>
-            {prompt.promptGrades.map((grade, index) => (
+            {prompt.grades.map((grade, index) => (
               <Badge key={index} variant="outline">
                 {grade.grade}
               </Badge>
